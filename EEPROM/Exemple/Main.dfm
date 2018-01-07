@@ -21,9 +21,9 @@ object fmExemple1: TfmExemple1
   TextHeight = 13
   object mmMemoryView: TMemo
     Left = 0
-    Top = 177
+    Top = 193
     Width = 781
-    Height = 385
+    Height = 369
     Align = alClient
     Font.Charset = DEFAULT_CHARSET
     Font.Color = clWindowText
@@ -67,38 +67,44 @@ object fmExemple1: TfmExemple1
       Action = actUpdate
       ParentShowHint = False
       ShowHint = True
+      OnClick = btnUpdateClick
     end
   end
   object gbInputs: TGroupBox
     Left = 0
     Top = 73
     Width = 781
-    Height = 104
+    Height = 120
     Align = alTop
     ParentShowHint = False
     ShowHint = True
     TabOrder = 2
     object rdgReadMode: TRadioGroup
-      Left = 305
+      Left = 529
       Top = 15
       Width = 224
-      Height = 87
+      Height = 103
       Align = alLeft
       Caption = 'Read Mode'
       ItemIndex = 0
       Items.Strings = (
         'Use EEPROM.Read(Adress);'
         'Use EEPROM[Adress];'
-        'Use EEPROM.get(Adress,value,count);')
+        'Use EEPROM.get(Adress,value,count);'
+        'Read as Double;')
       TabOrder = 0
+      ExplicitLeft = 311
+      ExplicitTop = 11
+      ExplicitHeight = 87
     end
     object GroupBox1: TGroupBox
       Left = 2
       Top = 15
       Width = 303
-      Height = 87
+      Height = 103
       Align = alLeft
       TabOrder = 1
+      ExplicitHeight = 87
       object lbValue: TLabel
         Left = 211
         Top = 20
@@ -157,6 +163,24 @@ object fmExemple1: TfmExemple1
         TabOrder = 1
         Value = 0
       end
+    end
+    object rdgWriteMode: TRadioGroup
+      Left = 305
+      Top = 15
+      Width = 224
+      Height = 103
+      Align = alLeft
+      Caption = 'Write Mode'
+      ItemIndex = 0
+      Items.Strings = (
+        'Use EEPROM.write(Adress,value);'
+        'Use EEPROM[Adress]:= valeu;'
+        'Use EEPROM.put(Adress,value,count);'
+        'Write as Double;')
+      TabOrder = 2
+      ExplicitLeft = 529
+      ExplicitTop = 11
+      ExplicitHeight = 87
     end
   end
   object imlImage64: TImageList

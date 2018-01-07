@@ -29,9 +29,10 @@ Type
     procedure update(Adress: TAdress; Value: byte);
     function read(Adress: TAdress): byte;
     function length: Cardinal;
-    function get(Adress:TAdress;var Buffer;const count:TAdress):TAdress;
+    function get(Adress: TAdress; var Buffer; const Count: TAdress): TAdress;
+    function put(Adress: TAdress; const Buffer; const Count: TAdress): TAdress;
     property FileName: string read FFileName write FFileName;
-    property readItem[index: TAdress]: byte read read; default;
+    property readItem[index: TAdress]: byte read read write write; default;
   published
     property OnChanged: TNotifyEEPROMChanged read FOnChanged write FOnChanged;
   end;
@@ -81,13 +82,13 @@ begin
     FOnChanged(self, Adress, Count);
 end;
 
-function TEEPROM.get(Adress: TAdress; var Buffer;
-  const count: TAdress): TAdress;
+function TEEPROM.get(Adress: TAdress; var Buffer; const Count: TAdress)
+  : TAdress;
 begin
   with TFileStream.Create(FileName, fmOpenRead) do
   begin
     Seek(Adress, soBeginning);
-    Read(Buffer, count);
+    result := Read(Buffer, Count);
     Free;
   end;
 end;
@@ -102,6 +103,18 @@ begin
   end;
 end;
 
+function TEEPROM.put(Adress: TAdress; const Buffer;
+  const Count: TAdress): TAdress;
+begin
+  with TFileStream.Create(FileName, fmOpenWrite) do
+  begin
+    Seek(Adress, soBeginning);
+    result := Write(Buffer, Count);
+    Free;
+  end;
+  DoChanged(Adress, result);
+end;
+
 function TEEPROM.read(Adress: TAdress): byte;
 begin
   with TFileStream.Create(FileName, fmOpenRead) do
@@ -114,19 +127,24 @@ end;
 
 procedure TEEPROM.update(Adress: TAdress; Value: byte);
 var
-  buffer: byte;
+  Buffer: byte;
+  changed: Boolean;
 begin
+  changed := False;
   with TFileStream.Create(FileName, fmOpenReadWrite) do
   begin
     Seek(Adress, soBeginning);
-    read(buffer, 1);
-    if buffer <> Value then
+    read(Buffer, 1);
+    if Buffer <> Value then
     begin
+      Seek(Adress, soBeginning);
       write(Value, 1);
-      DoChanged(Adress, 1);
+      changed := True;
     end;
     Free;
   end;
+  if changed then
+    DoChanged(Adress, 1);
 end;
 
 procedure TEEPROM.write(Adress: TAdress; Value: byte);
@@ -135,9 +153,9 @@ begin
   begin
     Seek(Adress, soBeginning);
     write(Value, 1);
-    DoChanged(Adress, 1);
     Free;
   end;
+  DoChanged(Adress, 1);
 end;
 
 initialization

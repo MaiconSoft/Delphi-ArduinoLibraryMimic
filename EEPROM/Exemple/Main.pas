@@ -29,15 +29,18 @@ type
     lbValue: TLabel;
     speAdress: TSpinEdit;
     lbAdress: TLabel;
+    rdgWriteMode: TRadioGroup;
     procedure FormCreate(Sender: TObject);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure actReadExecute(Sender: TObject);
     procedure actWriteExecute(Sender: TObject);
     procedure actUpdateExecute(Sender: TObject);
     procedure actActivateAppExecute(Sender: TObject);
+    procedure btnUpdateClick(Sender: TObject);
   private
     { Private declarations }
     procedure UpdateViewer;
+    procedure EEPROMChanged(Sender: TObject; const Adress, count: TAdress);
   public
     { Public declarations }
     EEPROM: TEEPROM;
@@ -50,14 +53,21 @@ implementation
 
 {$R *.dfm}
 
+procedure TfmExemple1.EEPROMChanged(Sender:TObject; const Adress,count:TAdress);
+begin
+ UpdateViewer;
+end;
+
 procedure TfmExemple1.actActivateAppExecute(Sender: TObject);
 begin
   UpdateViewer;
+  EEPROM.OnChanged:= EEPROMChanged;
 end;
 
 procedure TfmExemple1.actReadExecute(Sender: TObject);
 var
   Buffer: Byte;
+  DbBuffer: Double;
 begin
   case rdgReadMode.ItemIndex of
     0:
@@ -69,6 +79,11 @@ begin
         EEPROM.get(speAdress.Value, Buffer, 1);
         speValue.Value := Buffer;
       end;
+    3:
+      begin
+        EEPROM.get(speAdress.Value, DbBuffer, SizeOf(DbBuffer));
+        speValue.Value := round(DbBuffer);
+      end;
   end;
 end;
 
@@ -78,9 +93,34 @@ begin
 end;
 
 procedure TfmExemple1.actWriteExecute(Sender: TObject);
+var
+  Buffer: Byte;
+  DbBuffer: Double;
 begin
-  EEPROM.write(speAdress.Value, speValue.Value);
-  UpdateViewer;
+  case rdgWriteMode.ItemIndex of
+    0:
+      EEPROM.write(speAdress.Value, speValue.Value);
+    1:
+      EEPROM[speAdress.Value] := speValue.Value;
+    2:
+      begin
+        Buffer := speValue.Value;
+        EEPROM.put(speAdress.Value, Buffer, 1);
+      end;
+    3:
+      begin
+        DbBuffer := speValue.Value;
+        EEPROM.put(speAdress.Value, DbBuffer, SizeOf(DbBuffer));
+      end;
+  end;
+end;
+
+procedure TfmExemple1.btnUpdateClick(Sender: TObject);
+var
+  Buffer: Byte;
+  DbBuffer: Double;
+begin
+  EEPROM.update(speAdress.Value, speValue.Value);
 end;
 
 procedure TfmExemple1.FormClose(Sender: TObject; var Action: TCloseAction);
@@ -103,7 +143,7 @@ begin
     Clear;
     for i := 0 to EEPROM.length - 1 do
     begin
-      Text := Text + EEPROM.read(i).ToHexString(2) + ' ';
+      Text := Text + EEPROM[i].ToHexString(2) + ' ';
     end;
     EndUpdate;
   end;
