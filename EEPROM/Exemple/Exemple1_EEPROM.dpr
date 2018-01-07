@@ -3,7 +3,7 @@ program Exemple1_EEPROM;
 uses
   Vcl.Forms,
   Main in 'Main.pas' {Form1},
-  EEPROM in '..\EEPROM.pas';
+  uEEPROM in '..\uEEPROM.pas';
 
 {$R *.res}
 
