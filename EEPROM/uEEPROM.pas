@@ -6,6 +6,8 @@ Uses Classes, SysUtils, Windows;
 
 Type
   TAdress = Cardinal;
+  TNotifyEEPROMChanged = procedure(Sender: TObject;
+    const Adress, Count: TAdress) of object;
 
   TInt64Rec = packed record
     case Integer of
@@ -17,15 +19,21 @@ Type
 
   TEEPROM = class
   private
-    Memory: TFileStream;
     FFileName: string;
+    FOnChanged: TNotifyEEPROMChanged;
+    procedure DoChanged(Adress, Count: TAdress);
   public
     constructor Create(MemorySizeBytes: TAdress; FileName: string = '');
-    property FileName: string read FFileName write FFileName;
+    destructor Destroy(); override;
     procedure write(Adress: TAdress; Value: byte);
     procedure update(Adress: TAdress; Value: byte);
     function read(Adress: TAdress): byte;
-
+    function length: Cardinal;
+    function get(Adress:TAdress;var Buffer;const count:TAdress):TAdress;
+    property FileName: string read FFileName write FFileName;
+    property readItem[index: TAdress]: byte read read; default;
+  published
+    property OnChanged: TNotifyEEPROMChanged read FOnChanged write FOnChanged;
   end;
 
 implementation
@@ -58,41 +66,80 @@ begin
     FileName := ParamStr(0) + '.EEPROM.mem';
   self.FileName := FileName;
   ForceDirectories(ExtractFilePath(FileName));
-  SetFileSize(FileName,MemorySizeBytes);
+  SetFileSize(FileName, MemorySizeBytes);
+end;
+
+destructor TEEPROM.Destroy;
+begin
+
+  inherited;
+end;
+
+procedure TEEPROM.DoChanged(Adress, Count: Cardinal);
+begin
+  if Assigned(FOnChanged) then
+    FOnChanged(self, Adress, Count);
+end;
+
+function TEEPROM.get(Adress: TAdress; var Buffer;
+  const count: TAdress): TAdress;
+begin
+  with TFileStream.Create(FileName, fmOpenRead) do
+  begin
+    Seek(Adress, soBeginning);
+    Read(Buffer, count);
+    Free;
+  end;
+end;
+
+function TEEPROM.length: Cardinal;
+begin
+  with TFileStream.Create(FileName, fmOpenRead) do
+  begin
+    Seek(0, soBeginning);
+    result := Size;
+    Free;
+  end;
 end;
 
 function TEEPROM.read(Adress: TAdress): byte;
 begin
-  with TFileStream.Create(FileName,fmOpenRead) do
+  with TFileStream.Create(FileName, fmOpenRead) do
   begin
-    Seek(Adress,soBeginning);
-    Read(Result,1);
+    Seek(Adress, soBeginning);
+    Read(result, 1);
     Free;
   end;
 end;
 
 procedure TEEPROM.update(Adress: TAdress; Value: byte);
 var
- buffer:byte;
+  buffer: byte;
 begin
-  with TFileStream.Create(FileName,fmOpenReadWrite) do
+  with TFileStream.Create(FileName, fmOpenReadWrite) do
   begin
-    Seek(Adress,soBeginning);
-    read(buffer,1);
+    Seek(Adress, soBeginning);
+    read(buffer, 1);
     if buffer <> Value then
-      write(value,1);
+    begin
+      write(Value, 1);
+      DoChanged(Adress, 1);
+    end;
     Free;
   end;
 end;
 
 procedure TEEPROM.write(Adress: TAdress; Value: byte);
 begin
-  with TFileStream.Create(FileName,fmOpenWrite) do
+  with TFileStream.Create(FileName, fmOpenWrite) do
   begin
-    Seek(Adress,soBeginning);
-    write(value,1);
+    Seek(Adress, soBeginning);
+    write(Value, 1);
+    DoChanged(Adress, 1);
     Free;
   end;
 end;
+
+initialization
 
 end.
